@@ -4,23 +4,19 @@ metadata:
   name: weather-app
   labels:
     app: weather-app
-
 spec:
   replicas: 3
-
   selector:
     matchLabels:
       app: weather-app
-
   template:
     metadata:
       labels:
         app: weather-app
-
     spec:
       containers:
         - name: weather-app
-          image: ghcr.io/<username>/<repo>:latest   # ose dockerhub
+          image: drilonnol/apptest:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
-
