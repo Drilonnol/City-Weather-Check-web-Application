@@ -46,8 +46,8 @@ jobs:
       - name: Set AKS context
         uses: azure/aks-set-context@v4
         with:
-          resource-group: <RESOURCE_GROUP>
-          cluster-name: <AKS_CLUSTER>
+          resource-group: 1-bd6642bf-playground-sandbox
+          cluster-name: cluster1
 
  
       - name: Ensure namespace exists
