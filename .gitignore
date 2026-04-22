@@ -30,3 +30,5 @@ coverage/
 
 # Docker (opsional)
 docker-compose.override.yml
+
+commands.txt
