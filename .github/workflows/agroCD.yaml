@@ -1,0 +1,91 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - try-azure-cicd
+    paths-ignore:
+      - 'kubernetes/**'
+      - '**.md'
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  docker:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set IMAGE_NAME
+        run: echo "IMAGE_NAME=${REGISTRY}/$(echo ${GITHUB_REPOSITORY} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: type=sha,format=long
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.meta.outputs.tags }}
+          severity: CRITICAL,HIGH
+          exit-code: 1
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
+  deploy:
+    name: Update Kubernetes Manifest
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - uses: mikefarah/yq@v4
+
+      - name: Set IMAGE
+        run: |
+          echo "IMAGE=${REGISTRY}/$(echo ${GITHUB_REPOSITORY} | tr '[:upper:]' '[:lower:]'):sha-${GITHUB_SHA}" >> $GITHUB_ENV
+
+      - name: Update deployment
+        run: |
+          yq e -i '.spec.template.spec.containers[0].image = strenv(IMAGE)' kubernetes/deployment.yaml
+
+      - name: Commit & push
+        run: |
+          git add kubernetes/deployment.yaml
+          git commit -m "deploy: ${IMAGE} [skip ci]" || exit 0
+          git push
