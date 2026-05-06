@@ -74,10 +74,10 @@ jobs:
         env:
           IMAGE: ${{ needs.docker.outputs.image }}
         run: |
-          yq e -i '.spec.template.spec.containers[0].image = strenv(IMAGE)' kubernetes/deployment.yaml
+          yq e -i '.spec.template.spec.containers[0].image = strenv(IMAGE)' kubernetes/Deployment.yaml
 
       - name: Commit & push
         run: |
-          git add kubernetes/deployment.yaml
+          git add kubernetes/Deployment.yaml
           git commit -m "deploy: update image ${IMAGE}" || exit 0
           git push
