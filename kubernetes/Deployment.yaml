@@ -18,7 +18,7 @@ spec:
         - name: github-container-registry
       containers:
         - name: weather-app
-          image: ghcr.io/drilonnol/weather-app:sha-placeholder
+          image: ghcr.io/drilonnol/city-weather-check-web-application:sha-9fc97ec
           ports:
             - containerPort: 80
           resources:
