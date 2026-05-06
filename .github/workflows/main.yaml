@@ -1,10 +1,6 @@
 name: CI/CD build, push and deploy to AKS
 
-on:
-  push:
-    branches:
-      - main
-      - try-azure-cicd
+
 
 env:
   IMAGE_NAME: drilonnol/apptest
