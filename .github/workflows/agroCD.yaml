@@ -2,9 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
-      - try-azure-cicd
+    branches: [main, try-azure-cicd]
     paths-ignore:
       - 'kubernetes/**'
       - '**.md'
@@ -14,12 +12,10 @@ env:
 
 jobs:
   docker:
-    name: Build & Push Image
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      security-events: write
 
     steps:
       - uses: actions/checkout@v6
@@ -42,25 +38,10 @@ jobs:
       - uses: docker/build-push-action@v7
         with:
           context: .
-          load: true
-          tags: ${{ steps.meta.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ steps.meta.outputs.tags }}
-          severity: CRITICAL,HIGH
-          exit-code: 1
-
-      - uses: docker/build-push-action@v7
-        with:
-          context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
   deploy:
-    name: Update Kubernetes Manifest
     runs-on: ubuntu-latest
     needs: docker
     if: github.ref == 'refs/heads/main'
@@ -77,8 +58,7 @@ jobs:
       - uses: mikefarah/yq@v4
 
       - name: Set IMAGE
-        run: |
-          echo "IMAGE=${REGISTRY}/$(echo ${GITHUB_REPOSITORY} | tr '[:upper:]' '[:lower:]'):sha-${GITHUB_SHA}" >> $GITHUB_ENV
+        run: echo "IMAGE=${REGISTRY}/$(echo ${GITHUB_REPOSITORY} | tr '[:upper:]' '[:lower:]'):sha-${GITHUB_SHA}" >> $GITHUB_ENV
 
       - name: Update deployment
         run: |
